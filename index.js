@@ -4,16 +4,19 @@ import * as cheerio from "cheerio";
 
 const app = express();
 
-const headers = {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-  "Accept": "text/html,application/json",
-  "Accept-Language": "en-US,en;q=0.9"
-};
+// WSTAW SWÓJ KLUCZ API TUTAJ
+const API_KEY = "qOJ2eaJE4SENQNXNhQ2m74ZkWsjewGqp";
+
+async function proxyFetch(url) {
+  const apiUrl = `https://api.webscrapingapi.com/v1?api_key=${API_KEY}&url=${encodeURIComponent(url)}&render_js=0`;
+  const response = await fetch(apiUrl);
+  return response.text();
+}
 
 async function findPlayer(nick) {
   const url = `https://fastcup.net/api/search?query=${encodeURIComponent(nick)}`;
-  const response = await fetch(url, { headers });
-  const data = await response.json();
+  const jsonText = await proxyFetch(url);
+  const data = JSON.parse(jsonText);
 
   if (!data.players || data.players.length === 0) return null;
 
@@ -32,8 +35,7 @@ async function findPlayer(nick) {
 
 async function getStats(slug) {
   const url = `https://fastcup.net/en/player/${slug}`;
-  const response = await fetch(url, { headers });
-  const html = await response.text();
+  const html = await proxyFetch(url);
   const $ = cheerio.load(html);
 
   const elo = $(".player-rating-value").text().trim();
