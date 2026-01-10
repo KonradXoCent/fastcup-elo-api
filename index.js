@@ -4,10 +4,11 @@ import * as cheerio from "cheerio";
 
 const app = express();
 
-const API_KEY = "qOJ2eaJE4SENQQNXNHQ2m74ZkWsjewGqp";
+// 🔥 WSTAW SWÓJ ScraperAPI KEY
+const SCRAPER_API_KEY = "7abac10050c143482cebc8526364960e";
 
 async function proxyFetch(url) {
-  const apiUrl = `https://api.webscrapingapi.com/v2?api_key=${API_KEY}&url=${encodeURIComponent(url)}&render_js=0`;
+  const apiUrl = `https://api.scraperapi.com/?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(url)}`;
   const response = await fetch(apiUrl);
   return response.text();
 }
@@ -31,7 +32,6 @@ async function findPlayer(nick) {
   };
 }
 
-
 async function getStats(id) {
   const url = `https://cs.fastcup.net/id${id}`;
   const html = await proxyFetch(url);
@@ -50,7 +50,6 @@ async function getStats(id) {
   return { elo, elo_change, wins, losses };
 }
 
-
 // JSON endpoint for OBS
 app.get("/elo/json", async (req, res) => {
   const nick = req.query.nick;
@@ -68,6 +67,8 @@ app.get("/elo/json", async (req, res) => {
     res.json({ error: "Błąd Fastcup" });
   }
 });
+
+// Tekstowy endpoint dla Nightbota
 app.get("/elo", async (req, res) => {
   const nick = req.query.nick;
   if (!nick) return res.send("Podaj nick: !elo nick");
