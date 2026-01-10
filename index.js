@@ -68,5 +68,23 @@ app.get("/elo/json", async (req, res) => {
     res.json({ error: "Błąd Fastcup" });
   }
 });
+app.get("/elo", async (req, res) => {
+  const nick = req.query.nick;
+  if (!nick) return res.send("Podaj nick: !elo nick");
+
+  try {
+    const player = await findPlayer(nick);
+    if (!player) return res.send(`Nie znaleziono gracza: ${nick}`);
+
+    const stats = await getStats(player.id);
+    if (!stats) return res.send(`Brak statystyk dla: ${nick}`);
+
+    res.send(
+      `${player.nickname} — ELO: ${stats.elo} | Zmiana: ${stats.elo_change} | W: ${stats.wins} | L: ${stats.losses}`
+    );
+  } catch (err) {
+    res.send("Błąd Fastcup — spróbuj ponownie");
+  }
+});
 
 app.listen(3000, () => console.log("API działa"));
