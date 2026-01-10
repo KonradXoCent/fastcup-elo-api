@@ -14,23 +14,26 @@ async function proxyFetch(url) {
 }
 
 async function findPlayer(nick) {
-  const url = `https://cs.fastcup.net/api/search?query=${encodeURIComponent(nick)}`;
-  const response = await fetch(url);
-  const data = await response.json();
+  const searchUrl = `https://cs.fastcup.net/search?query=${encodeURIComponent(nick)}`;
+  const html = await proxyFetch(searchUrl);
+  const $ = cheerio.load(html);
 
-  if (!data.players || data.players.length === 0) return null;
+  const firstResult = $(".search-player a").first();
 
-  const exact = data.players.find(
-    p => p.nickname.toLowerCase() === nick.toLowerCase()
-  );
+  if (!firstResult || firstResult.length === 0) return null;
 
-  const player = exact || data.players[0];
+  const href = firstResult.attr("href"); // np. /id33781
+  const nickname = firstResult.text().trim();
+
+  const idMatch = href.match(/id(\d+)/);
+  if (!idMatch) return null;
 
   return {
-    id: player.id,
-    nickname: player.nickname
+    id: idMatch[1],
+    nickname
   };
 }
+
 
 async function getStats(id) {
   const url = `https://cs.fastcup.net/id${id}`;
