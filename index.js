@@ -49,7 +49,7 @@ app.get("/elo/json", async (req, res) => {
 // Tekstowy endpoint dla Nightbota
 app.get("/elo", async (req, res) => {
   const id = req.query.id;
-  if (!id) return res.send("Podaj ID: !elo 33781");
+  if (!id) return res.send("Podaj ID: !elo twojeid");
 
   try {
     const stats = await getStats(id);
