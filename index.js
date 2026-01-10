@@ -5,7 +5,7 @@ import * as cheerio from "cheerio";
 const app = express();
 
 // WSTAW SWÓJ KLUCZ API TUTAJ
-const API_KEY = "qOJ2eaJE4SENQNXNhQ2m74ZkWsjewGqp";
+const API_KEY = "qOJ2eaJE4SENQQNXNHQ2m74ZkWsjewGqp";
 
 async function proxyFetch(url) {
   const apiUrl = `https://api.webscrapingapi.com/v2?api_key=${API_KEY}&url=${encodeURIComponent(url)}&render_js=0`;
