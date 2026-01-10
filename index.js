@@ -8,7 +8,7 @@ const app = express();
 const API_KEY = "qOJ2eaJE4SENQNXNhQ2m74ZkWsjewGqp";
 
 async function proxyFetch(url) {
-  const apiUrl = `https://api.webscrapingapi.com/v1?api_key=${API_KEY}&url=${encodeURIComponent(url)}&render_js=0`;
+  const apiUrl = `https://api.webscrapingapi.com/v2?api_key=${API_KEY}&url=${encodeURIComponent(url)}&render_js=0`;
   const response = await fetch(apiUrl);
   return response.text();
 }
