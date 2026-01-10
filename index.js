@@ -13,28 +13,6 @@ async function proxyFetch(url) {
   return response.text();
 }
 
-async function findPlayer(nick) {
-  const searchUrl = `https://cs.fastcup.net/search?query=${encodeURIComponent(nick)}`;
-  const html = await proxyFetch(searchUrl);
-  const $ = cheerio.load(html);
-
-  const firstResult = $(".search-player a").first();
-
-  if (!firstResult || firstResult.length === 0) return null;
-
-  const href = firstResult.attr("href"); // np. /id33781
-  const nickname = firstResult.text().trim();
-
-  const idMatch = href.match(/id(\d+)/);
-  if (!idMatch) return null;
-
-  return {
-    id: idMatch[1],
-    nickname
-  };
-}
-
-
 async function getStats(id) {
   const url = `https://cs.fastcup.net/id${id}`;
   const html = await proxyFetch(url);
@@ -55,14 +33,11 @@ async function getStats(id) {
 
 // JSON endpoint for OBS
 app.get("/elo/json", async (req, res) => {
-  const nick = req.query.nick;
-  if (!nick) return res.json({ error: "Podaj nick: ?nick=x0cent" });
+  const id = req.query.id;
+  if (!id) return res.json({ error: "Podaj ID: ?id=33781" });
 
   try {
-    const player = await findPlayer(nick);
-    if (!player) return res.json({ error: "Nie znaleziono gracza" });
-
-    const stats = await getStats(player.id);
+    const stats = await getStats(id);
     if (!stats) return res.json({ error: "Brak statystyk" });
 
     res.json(stats);
@@ -73,18 +48,15 @@ app.get("/elo/json", async (req, res) => {
 
 // Tekstowy endpoint dla Nightbota
 app.get("/elo", async (req, res) => {
-  const nick = req.query.nick;
-  if (!nick) return res.send("Podaj nick: !elo nick");
+  const id = req.query.id;
+  if (!id) return res.send("Podaj ID: !elo 33781");
 
   try {
-    const player = await findPlayer(nick);
-    if (!player) return res.send(`Nie znaleziono gracza: ${nick}`);
-
-    const stats = await getStats(player.id);
-    if (!stats) return res.send(`Brak statystyk dla: ${nick}`);
+    const stats = await getStats(id);
+    if (!stats) return res.send(`Brak statystyk dla ID: ${id}`);
 
     res.send(
-      `${player.nickname} — ELO: ${stats.elo} | Zmiana: ${stats.elo_change} | W: ${stats.wins} | L: ${stats.losses}`
+      `ELO: ${stats.elo} | Zmiana: ${stats.elo_change} | W: ${stats.wins} | L: ${stats.losses}`
     );
   } catch (err) {
     res.send("Błąd Fastcup — spróbuj ponownie");
