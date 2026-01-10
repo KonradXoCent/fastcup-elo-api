@@ -4,7 +4,6 @@ import * as cheerio from "cheerio";
 
 const app = express();
 
-// WSTAW SWÓJ KLUCZ API TUTAJ
 const API_KEY = "qOJ2eaJE4SENQQNXNHQ2m74ZkWsjewGqp";
 
 async function proxyFetch(url) {
@@ -15,8 +14,10 @@ async function proxyFetch(url) {
 
 async function findPlayer(nick) {
   const url = `https://fastcup.net/api/search?query=${encodeURIComponent(nick)}`;
-  const jsonText = await proxyFetch(url);
-  const data = JSON.parse(jsonText);
+
+  // ❗ NORMALNY REQUEST — BEZ PROXY
+  const response = await fetch(url);
+  const data = await response.json();
 
   if (!data.players || data.players.length === 0) return null;
 
@@ -38,36 +39,34 @@ async function getStats(slug) {
   const html = await proxyFetch(url);
   const $ = cheerio.load(html);
 
-  const elo = $(".player-rating-value").text().trim();
-  const wins = $('div:contains("Wins")').next().text().trim();
-  const losses = $('div:contains("Losses")').next().text().trim();
+  const elo = parseInt($(".player-rating-value").text().trim(), 10);
+
+  const eloChangeText = $(".player-rating-change").first().text().trim();
+  const elo_change = parseInt(eloChangeText.replace("+", ""), 10) || 0;
+
+  const wins = parseInt($('div:contains("Wins")').next().text().trim(), 10);
+  const losses = parseInt($('div:contains("Losses")').next().text().trim(), 10);
 
   if (!elo) return null;
 
-  return { elo, wins, losses };
+  return { elo, elo_change, wins, losses };
 }
 
-app.get("/elo", async (req, res) => {
+// JSON endpoint for OBS
+app.get("/elo/json", async (req, res) => {
   const nick = req.query.nick;
-  if (!nick) return res.send("Podaj nick: !elo nick");
+  if (!nick) return res.json({ error: "Podaj nick: ?nick=x0cent" });
 
   try {
     const player = await findPlayer(nick);
-
-    if (!player) {
-      return res.send(`Nie znaleziono gracza o nicku: ${nick}`);
-    }
+    if (!player) return res.json({ error: "Nie znaleziono gracza" });
 
     const stats = await getStats(player.slug);
+    if (!stats) return res.json({ error: "Brak statystyk" });
 
-    if (!stats) {
-      return res.send(`Nie udało się pobrać statystyk gracza: ${nick}`);
-    }
-
-    res.send(`${player.nickname} — ELO: ${stats.elo} | W: ${stats.wins} | L: ${stats.losses}`);
+    res.json(stats);
   } catch (err) {
-    res.send("Błąd Fastcup — spróbuj ponownie");
+    res.json({ error: "Błąd Fastcup" });
   }
 });
-
 app.listen(3000, () => console.log("API działa"));
