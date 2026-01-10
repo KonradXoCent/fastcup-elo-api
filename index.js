@@ -13,9 +13,7 @@ async function proxyFetch(url) {
 }
 
 async function findPlayer(nick) {
-  const url = `https://fastcup.net/api/search?query=${encodeURIComponent(nick)}`;
-
-  // ❗ NORMALNY REQUEST — BEZ PROXY
+  const url = `https://cs.fastcup.net/api/search?query=${encodeURIComponent(nick)}`;
   const response = await fetch(url);
   const data = await response.json();
 
@@ -29,19 +27,19 @@ async function findPlayer(nick) {
 
   return {
     id: player.id,
-    slug: player.slug,
     nickname: player.nickname
   };
 }
 
-async function getStats(slug) {
-  const url = `https://fastcup.net/en/player/${slug}`;
+
+async function getStats(id) {
+  const url = `https://cs.fastcup.net/id${id}`;
   const html = await proxyFetch(url);
   const $ = cheerio.load(html);
 
-  const elo = parseInt($(".player-rating-value").text().trim(), 10);
+  const elo = parseInt($(".rating").first().text().trim(), 10);
 
-  const eloChangeText = $(".player-rating-change").first().text().trim();
+  const eloChangeText = $(".rating-change").first().text().trim();
   const elo_change = parseInt(eloChangeText.replace("+", ""), 10) || 0;
 
   const wins = parseInt($('div:contains("Wins")').next().text().trim(), 10);
@@ -52,6 +50,7 @@ async function getStats(slug) {
   return { elo, elo_change, wins, losses };
 }
 
+
 // JSON endpoint for OBS
 app.get("/elo/json", async (req, res) => {
   const nick = req.query.nick;
@@ -61,7 +60,7 @@ app.get("/elo/json", async (req, res) => {
     const player = await findPlayer(nick);
     if (!player) return res.json({ error: "Nie znaleziono gracza" });
 
-    const stats = await getStats(player.slug);
+    const stats = await getStats(player.id);
     if (!stats) return res.json({ error: "Brak statystyk" });
 
     res.json(stats);
@@ -69,4 +68,5 @@ app.get("/elo/json", async (req, res) => {
     res.json({ error: "Błąd Fastcup" });
   }
 });
+
 app.listen(3000, () => console.log("API działa"));
