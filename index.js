@@ -21,26 +21,49 @@ async function getStats(id, mode) {
   const key = `${id}_${mode}`;
   const now = Date.now();
 
-  // 🔥 Jeśli cache jest świeży — zwracamy go
+  // Cache
   if (cache[key] && now - cache[key].time < CACHE_DURATION) {
     return cache[key].data;
   }
 
+  // URL profilu
   const url = `https://cs.fastcup.net/id${id}?mode=${mode}`;
   const html = await proxyFetch(url);
   const $ = cheerio.load(html);
 
+  // ELO (działa dla wszystkich trybów)
   const elo = parseInt($(".rating").first().text().trim(), 10);
-  const eloChangeText = $(".rating-change").first().text().trim();
-  const elo_change = parseInt(eloChangeText.replace("+", ""), 10) || 0;
-  const wins = parseInt($('div:contains("Wins")').next().text().trim(), 10) || 0;
-  const losses = parseInt($('div:contains("Losses")').next().text().trim(), 10) || 0;
-
   if (!elo) return null;
+
+  let elo_change = 0;
+  let wins = 0;
+  let losses = 0;
+
+  if (mode === "5v5" || mode === "2v2") {
+    // Standardowe statystyki
+    const eloChangeText = $(".rating-change").first().text().trim();
+    elo_change = parseFloat(eloChangeText.replace("+", "")) || 0;
+
+    wins = parseInt($('div:contains("Wins")').next().text().trim(), 10) || 0;
+    losses = parseInt($('div:contains("Losses")').next().text().trim(), 10) || 0;
+  }
+
+  if (mode === "1v1") {
+    // Ostatnia zmiana ELO z tabeli meczów
+    const matchUrl = `https://cs.fastcup.net/id${id}/matches?mode=1v1`;
+    const matchHtml = await proxyFetch(matchUrl);
+    const $$ = cheerio.load(matchHtml);
+
+    const lastChange = $$(".match-rating-change").first().text().trim();
+    elo_change = parseFloat(lastChange.replace("+", "")) || 0;
+
+    // Brak wins/losses w 1v1
+    wins = null;
+    losses = null;
+  }
 
   const stats = { elo, elo_change, wins, losses };
 
-  // 🔥 Zapis do cache
   cache[key] = {
     time: now,
     data: stats
@@ -48,6 +71,7 @@ async function getStats(id, mode) {
 
   return stats;
 }
+
 
 // JSON endpoint dla OBS
 app.get("/elo/json", async (req, res) => {
