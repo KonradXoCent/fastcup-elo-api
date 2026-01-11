@@ -49,18 +49,25 @@ async function getStats(id, mode) {
   }
 
   if (mode === "1v1") {
-    // Ostatnia zmiana ELO z tabeli meczów
-    const matchUrl = `https://cs.fastcup.net/id${id}/matches?mode=1v1`;
-    const matchHtml = await proxyFetch(matchUrl);
-    const $$ = cheerio.load(matchHtml);
+  const matchUrl = `https://cs.fastcup.net/id${id}/matches?mode=1v1`;
+  const matchHtml = await proxyFetch(matchUrl);
+  const $$ = cheerio.load(matchHtml);
 
-    const lastChange = $$(".match-rating-change").first().text().trim();
-    elo_change = parseFloat(lastChange.replace("+", "")) || 0;
+  // Szukamy zmiany ELO w kilku możliwych miejscach
+  let lastChange =
+    $$(".match-rating-change").first().text().trim() ||
+    $$(".rating-change").first().text().trim() ||
+    $$(".match-rating").first().text().trim() ||
+    $$(".rating").eq(1).text().trim(); // fallback
 
-    // Brak wins/losses w 1v1
-    wins = null;
-    losses = null;
-  }
+  // Konwersja
+  lastChange = lastChange.replace(",", "."); // na wypadek formatu EU
+  elo_change = parseFloat(lastChange.replace("+", "")) || 0;
+
+  wins = null;
+  losses = null;
+}
+
 
   const stats = { elo, elo_change, wins, losses };
 
