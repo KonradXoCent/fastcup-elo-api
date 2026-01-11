@@ -53,20 +53,16 @@ async function getStats(id, mode) {
   const matchHtml = await proxyFetch(matchUrl);
   const $$ = cheerio.load(matchHtml);
 
-  // Szukamy zmiany ELO w kilku możliwych miejscach
-  let lastChange =
-    $$(".match-rating-change").first().text().trim() ||
-    $$(".rating-change").first().text().trim() ||
-    $$(".match-rating").first().text().trim() ||
-    $$(".rating").eq(1).text().trim(); // fallback
+  // Pobieramy zmianę ELO z 5. kolumny tabeli
+  let lastChange = $$("table tbody tr").first().find("td").eq(4).text().trim();
 
-  // Konwersja
-  lastChange = lastChange.replace(",", "."); // na wypadek formatu EU
+  lastChange = lastChange.replace(",", "."); // EU format
   elo_change = parseFloat(lastChange.replace("+", "")) || 0;
 
   wins = null;
   losses = null;
 }
+
 
 
   const stats = { elo, elo_change, wins, losses };
