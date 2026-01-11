@@ -31,21 +31,6 @@ async function getStats(id) {
   return { elo, elo_change, wins, losses };
 }
 
-// JSON endpoint for OBS
-app.get("/elo/json", async (req, res) => {
-  const id = req.query.id;
-  if (!id) return res.json({ error: "Podaj ID: ?id=33781" });
-
-  try {
-    const stats = await getStats(id);
-    if (!stats) return res.json({ error: "Brak statystyk" });
-
-    res.json(stats);
-  } catch (err) {
-    res.json({ error: "Błąd Fastcup" });
-  }
-});
-
 // Tekstowy endpoint dla Nightbota
 app.get("/elo", async (req, res) => {
   const id = req.query.id;
